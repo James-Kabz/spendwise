@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --nc-fg: 17 24 39;
+  --nc-fg-muted: 71 85 105;
+  --nc-fg-soft: 100 116 139;
+  --nc-surface: 255 255 255;
+  --nc-surface-muted: 248 250 252;
+  --nc-border: 148 163 184;
+  --nc-accent-1: 56 189 248;
+  --nc-accent-2: 59 130 246;
+  --nc-accent-3: 99 102 241;
+  --nc-accent-soft: 224 242 254;
 }
 
 @theme inline {
@@ -19,8 +29,69 @@
   }
 }
 
+[data-nc-mode="light"] {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+[data-nc-mode="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --nc-fg: 255 255 255;
+  --nc-fg-muted: 226 232 240;
+  --nc-fg-soft: 148 163 184;
+  --nc-surface: 15 23 42;
+  --nc-surface-muted: 30 41 59;
+  --nc-border: 148 163 184;
+}
+
+:root,
+[data-nc-theme="ocean"] {
+  --nc-accent-1: 56 189 248;
+  --nc-accent-2: 59 130 246;
+  --nc-accent-3: 99 102 241;
+  --nc-accent-soft: 224 242 254;
+}
+
+[data-nc-theme="aurora"] {
+  --nc-accent-1: 52 211 153;
+  --nc-accent-2: 45 212 191;
+  --nc-accent-3: 34 211 238;
+  --nc-accent-soft: 209 250 229;
+}
+
+[data-nc-theme="ember"] {
+  --nc-accent-1: 251 146 60;
+  --nc-accent-2: 249 115 22;
+  --nc-accent-3: 244 63 94;
+  --nc-accent-soft: 254 215 170;
+}
+
+[data-nc-theme="midnight"] {
+  --nc-accent-1: 167 139 250;
+  --nc-accent-2: 192 132 252;
+  --nc-accent-3: 244 114 182;
+  --nc-accent-soft: 237 233 254;
+}
+
+[data-nc-theme="cosmic"] {
+  --nc-accent-1: 244 114 182;
+  --nc-accent-2: 168 85 247;
+  --nc-accent-3: 129 140 248;
+  --nc-accent-soft: 251 207 232;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
