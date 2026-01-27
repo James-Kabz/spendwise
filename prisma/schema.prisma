@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/**
+ * -----------------------
+ * Auth.js / NextAuth
+ * -----------------------
+ */
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts AuthAccount[]
+  sessions Session[]
+
+  // SpendWise
+  financialAccounts   FinancialAccount[]
+  categories          Category[]
+  transactions        Transaction[]
+  budgets             Budget[]
+  savingsGoals        SavingsGoal[]
+  categorizationRules CategorizationRule[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("users")
+}
+
+model AuthAccount {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("auth_verification_tokens")
+}
+
+/**
+ * -----------------------
+ * SpendWise V1
+ * -----------------------
+ */
+
+enum FinancialAccountType {
+  cash
+  bank
+  mobile_money
+  savings
+  card
+  other
+}
+
+enum CategoryKind {
+  income
+  expense
+}
+
+enum TransactionDirection {
+  income
+  expense
+  transfer
+}
+
+model FinancialAccount {
+  id             String               @id @default(uuid()) @db.Uuid
+  userId         String
+  name           String
+  type           FinancialAccountType
+  currency       String               @default("KES") @db.Char(3)
+  openingBalance Decimal              @default(0) @db.Decimal(14, 2)
+  isActive       Boolean              @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // "from" account
+  transactions      Transaction[] @relation("TxAccount")
+  // "to" account for transfers
+  incomingTransfers Transaction[] @relation("TxTransferTo")
+  savingsGoals      SavingsGoal[]
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("financial_accounts")
+}
+
+model Category {
+  id       String       @id @default(uuid()) @db.Uuid
+  userId   String
+  name     String
+  kind     CategoryKind
+  isActive Boolean      @default(true)
+  color    String?
+  icon     String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions        Transaction[]
+  budgets             Budget[]
+  categorizationRules CategorizationRule[]
+
+  @@unique([userId, kind, name])
+  @@index([userId, kind])
+  @@map("categories")
+}
+
+model Transaction {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String
+
+  accountId  String? @db.Uuid
+  categoryId String? @db.Uuid
+
+  direction  TransactionDirection
+  amount     Decimal              @db.Decimal(14, 2)
+  currency   String               @default("KES") @db.Char(3)
+  occurredAt DateTime             @db.Timestamptz(6)
+  note       String?
+
+  transferToAccountId String? @db.Uuid
+
+  // convenience to support "last used"
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  account           FinancialAccount? @relation("TxAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  category          Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transferToAccount FinancialAccount? @relation("TxTransferTo", fields: [transferToAccountId], references: [id], onDelete: SetNull)
+
+  @@index([userId, occurredAt(sort: Desc)])
+  @@index([userId, accountId])
+  @@index([userId, categoryId])
+  @@map("transactions")
+}
+
+model Budget {
+  id         String @id @default(uuid()) @db.Uuid
+  userId     String
+  categoryId String @db.Uuid
+
+  // store first day of month, e.g. 2026-01-01
+  month DateTime @db.Date
+
+  amount   Decimal @db.Decimal(14, 2)
+  currency String  @default("KES") @db.Char(3)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+  @@index([userId, month])
+  @@map("budgets")
+}
+
+/**
+ * -----------------------
+ * “Smart feel” V1 (optional but recommended)
+ * -----------------------
+ */
+
+model CategorizationRule {
+  id         String  @id @default(uuid()) @db.Uuid
+  userId     String
+  pattern    String // e.g. "uber", "naivas"
+  matchType  String  @default("contains") // contains|startsWith|regex (enforce in app)
+  categoryId String  @db.Uuid
+  priority   Int     @default(100)
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([userId, priority])
+  @@map("categorization_rules")
+}
+
+model SavingsGoal {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String
+  name         String
+  targetAmount Decimal   @db.Decimal(14, 2)
+  currency     String    @default("KES") @db.Char(3)
+  targetDate   DateTime? @db.Date
+  accountId    String?   @db.Uuid // link to savings account (recommended)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account FinancialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("savings_goals")
+}
