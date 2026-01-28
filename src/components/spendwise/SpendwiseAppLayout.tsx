@@ -7,18 +7,27 @@ import * as React from "react";
 export type SpendwiseAppLayoutProps = {
   children: React.ReactNode;
   title?: string;
-  breadcrumb?: LayoutConfig["header"] extends { breadcrumb?: infer B } ? B : never;
+  breadcrumb?: NonNullable<LayoutConfig["header"]> extends {
+    breadcrumb?: infer B;
+  }
+    ? B
+    : never;
   headerActions?: React.ReactNode;
   sidebarFooter?: React.ReactNode;
 };
 
-type SidebarItems = LayoutConfig["sidebar"] extends { items: infer Items }
-  ? Items
-  : never;
+type SidebarItems =
+  NonNullable<LayoutConfig["sidebar"]> extends { items?: infer Items }
+    ? Items
+    : never;
 
 type HeaderOverride = {
   title?: string;
-  breadcrumb?: LayoutConfig["header"] extends { breadcrumb?: infer B } ? B : never;
+  breadcrumb?: NonNullable<LayoutConfig["header"]> extends {
+    breadcrumb?: infer B;
+  }
+    ? B
+    : never;
 };
 
 type HeaderOverrideContextValue = {

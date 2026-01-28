@@ -7,7 +7,11 @@ import { useSpendwiseHeader } from "./SpendwiseAppLayout";
 
 export type SpendwisePageHeaderProps = {
   title?: string;
-  breadcrumb?: LayoutConfig["header"] extends { breadcrumb?: infer B } ? B : never;
+  breadcrumb?: NonNullable<LayoutConfig["header"]> extends {
+    breadcrumb?: infer B;
+  }
+    ? B
+    : never;
 };
 
 export default function SpendwisePageHeader({
