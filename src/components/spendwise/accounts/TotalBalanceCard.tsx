@@ -4,6 +4,7 @@ import { formatCurrency } from "@/components/spendwise/accounts/utils";
 
 type TotalBalanceCardProps = {
   totalBalance: number;
+  currency?: string;
   activeCount: number;
   totalCount: number;
   loading?: boolean;
@@ -11,6 +12,7 @@ type TotalBalanceCardProps = {
 
 export default function TotalBalanceCard({
   totalBalance,
+  currency = "KES",
   activeCount,
   totalCount,
   loading = false,
@@ -25,7 +27,7 @@ export default function TotalBalanceCard({
           <CraftSkeleton className="h-10 w-40" />
         ) : (
           <p className="text-3xl font-semibold text-[rgb(var(--nc-fg))]">
-            {formatCurrency(totalBalance)}
+            {formatCurrency(totalBalance, currency)}
           </p>
         )}
       </div>

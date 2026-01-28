@@ -102,7 +102,7 @@ export default function AccountsTable({
         align: "right" as const,
         cell: (row: Account) => (
           <span className="text-sm text-[rgb(var(--nc-fg))]">
-            {formatCurrency(row.openingBalance)}
+            {formatCurrency(row.openingBalance, row.currency)}
           </span>
         ),
       },
@@ -112,7 +112,7 @@ export default function AccountsTable({
         align: "right" as const,
         cell: (row: Account) => (
           <span className="text-sm font-semibold text-[rgb(var(--nc-fg))]">
-            {formatCurrency(row.currentBalance)}
+            {formatCurrency(row.currentBalance, row.currency)}
           </span>
         ),
       },
