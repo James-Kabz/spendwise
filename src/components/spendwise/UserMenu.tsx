@@ -5,6 +5,7 @@ import {
   CraftDropdownMenu,
   type CraftDropdownItem,
 } from "@jameskabz/nextcraft-ui";
+import { signOut } from "next-auth/react";
 
 export type UserMenuUser = {
   name?: string | null;
@@ -36,7 +37,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       return;
     }
 
-    window.location.href = "/api/auth/signout";
+    void signOut({ callbackUrl: "/login" });
   };
 
   const items: CraftDropdownItem[] = [

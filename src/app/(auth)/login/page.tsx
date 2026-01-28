@@ -1,6 +1,7 @@
-import { CraftLink, GlassCard, ThemeSwitcher } from "@jameskabz/nextcraft-ui";
+"use client";
 
-const signInUrl = "/api/auth/signin/google?callbackUrl=/dashboard";
+import { CraftButton, GlassCard, ThemeSwitcher } from "@jameskabz/nextcraft-ui";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   return (
@@ -15,9 +16,13 @@ export default function LoginPage() {
       <p className="text-sm text-[rgb(var(--nc-fg-muted))]">
         Use your Google account to sync sessions securely.
       </p>
-      <CraftLink variant="button" href={signInUrl} className="w-full justify-center">
+      <CraftButton
+        type="button"
+        className="w-full justify-center"
+        onClick={() => void signIn("google", { callbackUrl: "/dashboard" })}
+      >
         Continue with Google
-      </CraftLink>
+      </CraftButton>
     </GlassCard>
   );
 }
