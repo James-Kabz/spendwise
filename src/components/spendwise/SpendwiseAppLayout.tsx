@@ -47,12 +47,12 @@ export function useSpendwiseHeader() {
 }
 
 const sidebarItems: SidebarItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "layout-dashboard" },
+  { label: "Dashboard", href: "/dashboard", icon: "gauge" },
   { label: "Accounts", href: "/accounts", icon: "wallet" },
-  { label: "Transactions", href: "/transactions", icon: "arrow-left-right" },
+  { label: "Transactions", href: "/transactions", icon: "arrow-right" },
   { label: "Categories", href: "/categories", icon: "tag" },
   { label: "Budgets", href: "/budgets", icon: "pie-chart" },
-  { label: "Settings", href: "/settings", icon: "settings" },
+  { label: "Settings", href: "/settings", icon: "cog" },
 ];
 
 const routeMeta = [
@@ -121,7 +121,6 @@ export default function SpendwiseAppLayout({
         headerActions={headerActions}
         sidebarFooter={sidebarFooter}
         activePath={pathname ?? undefined}
-        lucideFallback
       >
         {children}
       </AppTemplate>

@@ -40,6 +40,7 @@ export async function GET(request: Request) {
     return {
       id: account.id,
       name: account.name,
+      institution: account.institution,
       type: account.type,
       currency: account.currency,
       openingBalance: decimalToString(account.openingBalance),
@@ -68,6 +69,8 @@ export async function POST(request: Request) {
   const currency = typeof body.currency === "string" ? body.currency.toUpperCase() : "KES";
   const openingBalanceRaw = body.openingBalance ?? "0";
   const isActive = typeof body.isActive === "boolean" ? body.isActive : true;
+  const institutionRaw = typeof body.institution === "string" ? body.institution : "";
+  const institution = institutionRaw.trim();
 
   if (!name) {
     return NextResponse.json({ success: false, error: "Name is required" }, { status: 400 });
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
     data: {
       userId: user.id,
       name,
+      institution: institution || null,
       type,
       currency,
       openingBalance,
@@ -94,16 +98,17 @@ export async function POST(request: Request) {
     success: true,
     data: {
       account: {
-        id: account.id,
-        name: account.name,
-        type: account.type,
-        currency: account.currency,
-        openingBalance: decimalToString(account.openingBalance),
-        balance: decimalToString(account.openingBalance),
-        isActive: account.isActive,
-        createdAt: account.createdAt.toISOString(),
-        updatedAt: account.updatedAt.toISOString(),
-      },
+      id: account.id,
+      name: account.name,
+      institution: account.institution,
+      type: account.type,
+      currency: account.currency,
+      openingBalance: decimalToString(account.openingBalance),
+      balance: decimalToString(account.openingBalance),
+      isActive: account.isActive,
+      createdAt: account.createdAt.toISOString(),
+      updatedAt: account.updatedAt.toISOString(),
     },
+  },
   });
 }

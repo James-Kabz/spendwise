@@ -10,17 +10,18 @@ import {
 } from "@/lib/account-balances";
 
 type RouteParams = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function GET(_request: Request, { params }: RouteParams) {
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const account = await prisma.financialAccount.findFirst({
-    where: { id: params.id, userId: user.id },
+    where: { id, userId: user.id },
   });
 
   if (!account) {
@@ -36,6 +37,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       account: {
         id: account.id,
         name: account.name,
+        institution: account.institution,
         type: account.type,
         currency: account.currency,
         openingBalance: decimalToString(account.openingBalance),
@@ -49,13 +51,14 @@ export async function GET(_request: Request, { params }: RouteParams) {
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const existing = await prisma.financialAccount.findFirst({
-    where: { id: params.id, userId: user.id },
+    where: { id, userId: user.id },
   });
 
   if (!existing) {
@@ -84,6 +87,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     data.currency = body.currency.toUpperCase();
   }
 
+  if (typeof body.institution === "string") {
+    const trimmed = body.institution.trim();
+    data.institution = trimmed ? trimmed : null;
+  }
+
   if (body.openingBalance !== undefined) {
     data.openingBalance = new Prisma.Decimal(body.openingBalance || 0);
   }
@@ -106,6 +114,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       account: {
         id: account.id,
         name: account.name,
+        institution: account.institution,
         type: account.type,
         currency: account.currency,
         openingBalance: decimalToString(account.openingBalance),
@@ -119,13 +128,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const existing = await prisma.financialAccount.findFirst({
-    where: { id: params.id, userId: user.id },
+    where: { id, userId: user.id },
   });
 
   if (!existing) {

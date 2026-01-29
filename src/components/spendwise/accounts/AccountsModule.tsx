@@ -17,6 +17,7 @@ import {
 type AccountApiResponse = {
   id: string;
   name: string;
+  institution?: string | null;
   type: string;
   currency: string;
   openingBalance: string;
@@ -43,7 +44,7 @@ type SummaryResponse = {
 const mapApiAccount = (account: AccountApiResponse): Account => ({
   id: account.id,
   name: account.name,
-  institution: "",
+  institution: account.institution ?? "",
   type: fromApiAccountType(account.type),
   currency: account.currency ?? "KES",
   openingBalance: Number(account.openingBalance ?? 0),
@@ -119,6 +120,7 @@ export default function AccountsModule() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: values.name,
+          institution: values.institution,
           type: toApiAccountType(values.type),
           currency: "KES",
           openingBalance: String(values.openingBalance ?? 0),
@@ -138,6 +140,7 @@ export default function AccountsModule() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: values.name,
+          institution: values.institution,
           type: toApiAccountType(values.type),
           openingBalance: String(values.openingBalance ?? 0),
         }),

@@ -7,7 +7,6 @@ import {
   CraftDataTable,
   CraftEmptyState,
   CraftFilterBar,
-  CraftPagination,
   CraftSelect,
   CraftSkeleton,
 } from "@jameskabz/nextcraft-ui";
@@ -36,8 +35,6 @@ export default function AccountsTable({
   const [search, setSearch] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(5);
 
   const filteredAccounts = React.useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -57,23 +54,6 @@ export default function AccountsTable({
       return matchesSearch && matchesType && matchesStatus;
     });
   }, [accounts, search, statusFilter, typeFilter]);
-
-  React.useEffect(() => {
-    setPageIndex(0);
-  }, [search, statusFilter, typeFilter, pageSize]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredAccounts.length / pageSize));
-  const safePageIndex = Math.min(pageIndex, pageCount - 1);
-  const paginatedAccounts = filteredAccounts.slice(
-    safePageIndex * pageSize,
-    safePageIndex * pageSize + pageSize
-  );
-
-  React.useEffect(() => {
-    if (pageIndex > pageCount - 1) {
-      setPageIndex(Math.max(0, pageCount - 1));
-    }
-  }, [pageCount, pageIndex]);
 
   const columns = React.useMemo(
     () => [
@@ -184,7 +164,7 @@ export default function AccountsTable({
       />
 
       <CraftDataTable
-        data={paginatedAccounts}
+        data={filteredAccounts}
         columns={columns}
         loading={loading}
         emptyState={
@@ -195,21 +175,6 @@ export default function AccountsTable({
           />
         }
       />
-
-      {loading ? (
-        <CraftSkeleton className="h-12 w-full" />
-      ) : (
-        <CraftPagination
-          pageIndex={safePageIndex}
-          pageCount={pageCount}
-          onPageChange={setPageIndex}
-          canPrevious={safePageIndex > 0}
-          canNext={safePageIndex < pageCount - 1}
-          pageSize={pageSize}
-          pageSizeOptions={[5, 10, 20]}
-          onPageSizeChange={setPageSize}
-        />
-      )}
     </div>
   );
 }

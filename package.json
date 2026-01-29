@@ -10,7 +10,10 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@jameskabz/nextcraft-ui": "^0.6.16",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
+    "@jameskabz/nextcraft-ui": "^0.7.4",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
