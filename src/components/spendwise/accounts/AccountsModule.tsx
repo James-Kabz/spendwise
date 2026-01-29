@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CraftButton } from "@jameskabz/nextcraft-ui";
+import { CraftButton, CraftLoader } from "@jameskabz/nextcraft-ui";
 import AccountDrawer from "@/components/spendwise/accounts/AccountDrawer";
 import AccountForm, {
   type AccountFormValues,
@@ -186,7 +186,20 @@ export default function AccountsModule() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      {(loading || summaryLoading) && (
+        <div className="fixed inset-0 z-50">
+          <CraftLoader
+            loading
+            overlay
+            type="pulse"
+            size="large"
+            text="Loading"
+            backgroundColor="rgb(var(--nc-accent-soft)/ 0.25)"
+            tone="aurora"
+          />
+        </div>
+      )}
       <div className="grid gap-4">
         <TotalBalanceCard
           totalBalance={summary?.totalBalance ?? 0}
