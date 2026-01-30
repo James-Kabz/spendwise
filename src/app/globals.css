@@ -9,10 +9,11 @@
   --nc-surface: 255 255 255;
   --nc-surface-muted: 248 250 252;
   --nc-border: 148 163 184;
-  --nc-accent-1: 56 189 248;
-  --nc-accent-2: 59 130 246;
-  --nc-accent-3: 99 102 241;
-  --nc-accent-soft: 224 242 254;
+  --nc-accent-1: 45 152 198;
+  --nc-accent-2: 47 104 196;
+  --nc-accent-3: 79 82 193;
+  --nc-accent-soft: 10 11 14;
+  --spendwise-loader-overlay: rgb(var(--nc-accent-soft) / 0.35);
 }
 
 @theme inline {
@@ -43,42 +44,43 @@
   --nc-surface: 15 23 42;
   --nc-surface-muted: 30 41 59;
   --nc-border: 148 163 184;
+  --spendwise-loader-overlay: rgb(2 6 23 / 0.55);
 }
 
 :root,
 [data-nc-theme="ocean"] {
-  --nc-accent-1: 56 189 248;
-  --nc-accent-2: 59 130 246;
-  --nc-accent-3: 99 102 241;
-  --nc-accent-soft: 224 242 254;
+  --nc-accent-1: 45 152 198;
+  --nc-accent-2: 47 104 196;
+  --nc-accent-3: 79 82 193;
+  --nc-accent-soft: 10 11 14;
 }
 
 [data-nc-theme="aurora"] {
-  --nc-accent-1: 52 211 153;
-  --nc-accent-2: 45 212 191;
-  --nc-accent-3: 34 211 238;
-  --nc-accent-soft: 209 250 229;
+  --nc-accent-1: 42 169 123;
+  --nc-accent-2: 36 169 151;
+  --nc-accent-3: 27 169 190;
+  --nc-accent-soft: 10 11 14;
 }
 
 [data-nc-theme="ember"] {
-  --nc-accent-1: 251 146 60;
-  --nc-accent-2: 249 115 22;
-  --nc-accent-3: 244 63 94;
-  --nc-accent-soft: 254 215 170;
+  --nc-accent-1: 201 117 48;
+  --nc-accent-2: 199 92 18;
+  --nc-accent-3: 195 50 75;
+  --nc-accent-soft: 10 11 14;
 }
 
 [data-nc-theme="midnight"] {
-  --nc-accent-1: 167 139 250;
-  --nc-accent-2: 192 132 252;
-  --nc-accent-3: 244 114 182;
-  --nc-accent-soft: 237 233 254;
+  --nc-accent-1: 134 111 200;
+  --nc-accent-2: 154 106 201;
+  --nc-accent-3: 195 91 146;
+  --nc-accent-soft: 10 11 14;
 }
 
 [data-nc-theme="cosmic"] {
-  --nc-accent-1: 244 114 182;
-  --nc-accent-2: 168 85 247;
-  --nc-accent-3: 129 140 248;
-  --nc-accent-soft: 251 207 232;
+  --nc-accent-1: 195 91 146;
+  --nc-accent-2: 134 68 197;
+  --nc-accent-3: 103 112 198;
+  --nc-accent-soft: 10 11 14;
 }
 
 body {
