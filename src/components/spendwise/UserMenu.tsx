@@ -5,6 +5,7 @@ import {
   CraftDropdownMenu,
   type CraftDropdownItem,
 } from "@jameskabz/nextcraft-ui";
+import Image from "next/image";
 import { signOut } from "next-auth/react";
 
 export type UserMenuUser = {
@@ -52,9 +53,11 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       trigger={
         <CraftButton variant="ghost" className="gap-3">
           {user?.image ? (
-            <img
+            <Image
               src={user.image}
               alt={label}
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-full object-cover"
             />
           ) : (

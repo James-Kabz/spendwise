@@ -96,6 +96,7 @@ enum FinancialAccountType {
 enum CategoryKind {
   income
   expense
+  savings
 }
 
 enum TransactionDirection {
