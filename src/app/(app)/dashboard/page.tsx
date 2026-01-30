@@ -1,18 +1,8 @@
 import { CraftButton, CraftStatCard, GlassCard, Grid } from "@jameskabz/nextcraft-ui";
 
-import SpendwisePageHeader from "@/components/spendwise/SpendwisePageHeader";
-
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      <SpendwisePageHeader
-        title="Dashboard"
-        breadcrumb={[
-          { label: "Spendwise", href: "/dashboard" },
-          { label: "Dashboard" },
-        ]}
-      />
-
       <Grid columns={3} gap="md">
         <CraftStatCard
           label="Today"

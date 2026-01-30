@@ -1,8 +1,10 @@
 import ProtectedRoute from "@/components/spendwise/ProtectedRoute";
-import SpendwiseAppLayout from "@/components/spendwise/SpendwiseAppLayout";
 import UserMenu from "@/components/spendwise/UserMenu";
 import { ThemeSwitcher } from "@jameskabz/nextcraft-ui";
 import { getCurrentUser } from "@/lib/auth";
+import { Suspense } from "react";
+import Loading from "./loading";
+import AppShellClient from "./app-shell-client";
 
 export default async function AppLayout({
   children,
@@ -13,7 +15,7 @@ export default async function AppLayout({
 
   return (
     <ProtectedRoute user={user}>
-      <SpendwiseAppLayout
+      <AppShellClient
         headerActions={
           <div className="flex items-center gap-3">
             <ThemeSwitcher />
@@ -21,8 +23,8 @@ export default async function AppLayout({
           </div>
         }
       >
-        {children}
-      </SpendwiseAppLayout>
+        <Suspense fallback={<Loading />}>{children}</Suspense>
+      </AppShellClient>
     </ProtectedRoute>
   );
 }

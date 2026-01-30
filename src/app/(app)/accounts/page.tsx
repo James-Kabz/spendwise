@@ -4,13 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CraftBadge,
   CraftButton,
+  CraftConfirmDialog,
   CraftDataTable,
   CraftDataTableFilters,
   CraftFormModal,
-  CraftLoader,
 } from "@jameskabz/nextcraft-ui";
 
-import SpendwisePageHeader from "@/components/spendwise/SpendwisePageHeader";
 import TotalBalanceCard from "@/components/spendwise/accounts/TotalBalanceCard";
 import {
   ACCOUNT_TYPES,
@@ -19,12 +18,14 @@ import {
 } from "@/components/spendwise/accounts/types";
 import { formatCurrency } from "@/components/spendwise/accounts/utils";
 import { useAccountsStore } from "@/stores/useAccountsStore";
+import Loading from "./loading";
 import type {
   CraftDataTableAction,
   CraftDataTableColumn,
   CraftDataTableFilterSelect,
   CraftFormModalField,
 } from "@jameskabz/nextcraft-ui";
+import AccountTypeBadge from "@/components/spendwise/accounts/AccountTypeBadge";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -82,6 +83,11 @@ export default function AccountsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<
+    "deactivate" | "reactivate" | null
+  >(null);
+  const [confirmAccount, setConfirmAccount] = useState<Account | null>(null);
 
   // --------------------------------------------------------------------------
   // COMPUTED VALUES
@@ -229,23 +235,32 @@ export default function AccountsPage() {
         id: "name",
         header: "Account",
         accessor: (row: Account) => row.name,
-        formatter: (_value, row) =>
-          row.institution ? `${row.name} • ${row.institution}` : row.name,
+        align: "center",
+        formatter: (value) => (
+          <span className="text-lg font-extrabold text-[rgb(var(--nc-fg))]">
+            {String(value ?? "")}
+          </span>
+        ),
+    },
+    {
+      id: "institution",
+      header: "Institution",
+      accessor: "institution",
+      align: "left"
     },
     {
       id: "type",
       header: "Type",
       accessor: "type",
-      formatter: (value) => (
-        <CraftBadge variant="soft" tone="aurora">
-          {String(value ?? "")}
-        </CraftBadge>
+      formatter: (_value, row) => (
+        <AccountTypeBadge type={row.type} />
       ),
+      align: "left"
     },
     {
       id: "openingBalance",
       header: "Opening",
-      align: "right" as const,
+      align: "center",
       accessor: "openingBalance",
       formatter: (value, row) =>
         formatCurrency(Number(value ?? 0), row.currency),
@@ -253,7 +268,7 @@ export default function AccountsPage() {
     {
       id: "balance",
       header: "Balance",
-      align: "right" as const,
+      align: "center",
       accessor: "currentBalance",
       formatter: (value, row) =>
         formatCurrency(Number(value ?? 0), row.currency),
@@ -262,6 +277,7 @@ export default function AccountsPage() {
       id: "status",
       header: "Status",
       accessor: "isActive",
+      align: "left",
       formatter: (value) => {
         const isActive = Boolean(value);
         return (
@@ -304,6 +320,27 @@ export default function AccountsPage() {
     setFormOpen(true);
   }, []);
 
+  const openStatusConfirm = useCallback(
+    (action: "deactivate" | "reactivate", account: Account) => {
+      setConfirmAction(action);
+      setConfirmAccount(account);
+      setConfirmOpen(true);
+    },
+    []
+  );
+
+  const handleConfirmStatusChange = useCallback(async () => {
+    if (!confirmAccount || !confirmAction) return;
+    if (confirmAction === "deactivate") {
+      await handleDeactivate(confirmAccount.id);
+    } else {
+      await handleReactivate(confirmAccount.id);
+    }
+    setConfirmOpen(false);
+    setConfirmAccount(null);
+    setConfirmAction(null);
+  }, [confirmAction, confirmAccount, handleDeactivate, handleReactivate]);
+
   const tableActions = useMemo(
     (): Array<CraftDataTableAction<Account>> => [
       {
@@ -319,7 +356,7 @@ export default function AccountsPage() {
         tooltip: "Deactivate account",
         variant: "outline",
         visible: (row) => row.isActive,
-        onClick: (row) => handleDeactivate(row.id),
+        onClick: (row) => openStatusConfirm("deactivate", row),
       },
       {
         key: "reactivate",
@@ -327,10 +364,10 @@ export default function AccountsPage() {
         tooltip: "Reactivate account",
         variant: "outline",
         visible: (row) => !row.isActive,
-        onClick: (row) => handleReactivate(row.id),
+        onClick: (row) => openStatusConfirm("reactivate", row),
       },
     ],
-    [handleDeactivate, handleReactivate, openEdit]
+    [openEdit, openStatusConfirm]
   );
 
   const handleFormOpenChange = useCallback((open: boolean) => {
@@ -379,28 +416,9 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <SpendwisePageHeader
-        title="Accounts"
-        breadcrumb={[
-          { label: "Spendwise", href: "/dashboard" },
-          { label: "Accounts", href: "/accounts" },
-        ]}
-      />
 
       {/* Loading Overlay */}
-      {(loading || summaryLoading) && (
-        <div className="fixed inset-0 z-50">
-          <CraftLoader
-            loading
-            overlay
-            type="pulse"
-            size="large"
-            text="Loading"
-            backgroundColor="rgb(var(--nc-accent-soft)/ 0.25)"
-            tone="aurora"
-          />
-        </div>
-      )}
+      {(loading || summaryLoading) && <Loading />}
 
       {/* Summary Card */}
       <div className="grid gap-4">
@@ -469,6 +487,26 @@ export default function AccountsPage() {
         closeOnSubmit
         showReset={false}
         onSubmit={handleFormSubmit}
+      />
+
+      <CraftConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={
+          confirmAction === "deactivate"
+            ? "Deactivate account?"
+            : "Reactivate account?"
+        }
+        description={
+          confirmAction === "deactivate"
+            ? "Inactive accounts are excluded from totals, but history stays intact."
+            : "This account will be included in totals again."
+        }
+        confirmLabel={
+          confirmAction === "deactivate" ? "Deactivate" : "Reactivate"
+        }
+        confirmVariant="outline"
+        onConfirm={handleConfirmStatusChange}
       />
     </div>
   );
