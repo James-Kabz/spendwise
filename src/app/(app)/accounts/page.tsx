@@ -15,13 +15,10 @@ import TotalBalanceCard from "@/components/spendwise/accounts/TotalBalanceCard";
 import {
   ACCOUNT_TYPES,
   type Account,
-  type AccountType,
+  type AccountFormValues,
 } from "@/components/spendwise/accounts/types";
-import {
-  formatCurrency,
-  fromApiAccountType,
-  toApiAccountType,
-} from "@/components/spendwise/accounts/utils";
+import { formatCurrency } from "@/components/spendwise/accounts/utils";
+import { useAccountsStore } from "@/stores/useAccountsStore";
 import type {
   CraftDataTableAction,
   CraftDataTableColumn,
@@ -33,41 +30,6 @@ import type {
 // TYPE DEFINITIONS
 // ============================================================================
 
-type AccountApiResponse = {
-  id: string;
-  name: string;
-  institution?: string | null;
-  type: string;
-  currency: string;
-  openingBalance: string;
-  balance: string;
-  isActive: boolean;
-  updatedAt: string;
-  createdAt: string;
-};
-
-type AccountsListResponse = {
-  success: boolean;
-  data?: { accounts: AccountApiResponse[] };
-};
-
-type SummaryResponse = {
-  success: boolean;
-  data?: {
-    totalBalance: string;
-    currency: string;
-    accounts: Array<{ id: string; name: string; balance: string }>;
-  };
-};
-
-type AccountFormValues = {
-  name: string;
-  institution: string;
-  type: AccountType;
-  openingBalance: number;
-  isActive: boolean;
-};
-
 type StatusFilter = "all" | "active" | "inactive";
 
 // ============================================================================
@@ -76,29 +38,9 @@ type StatusFilter = "all" | "active" | "inactive";
 
 const STATUS_OPTIONS = ["all", "active", "inactive"] as const;
 
-const defaultFormValues: AccountFormValues = {
-  name: "",
-  institution: "",
-  type: ACCOUNT_TYPES[0],
-  openingBalance: 0,
-  isActive: true,
-};
-
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-
-const mapApiAccount = (account: AccountApiResponse): Account => ({
-  id: account.id,
-  name: account.name,
-  institution: account.institution ?? "",
-  type: fromApiAccountType(account.type),
-  currency: account.currency ?? "KES",
-  openingBalance: Number(account.openingBalance ?? 0),
-  currentBalance: Number(account.balance ?? 0),
-  isActive: account.isActive,
-  lastUpdated: account.updatedAt ?? account.createdAt ?? "",
-});
 
 const mapAccountToFormValues = (account: Account): AccountFormValues => ({
   name: account.name,
@@ -118,11 +60,15 @@ export default function AccountsPage() {
   // --------------------------------------------------------------------------
   
   // Data state
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [summary, setSummary] = useState<{
-    totalBalance: number;
-    currency: string;
-  } | null>(null);
+  const accounts = useAccountsStore((state) => state.accounts);
+  const summary = useAccountsStore((state) => state.summary);
+  const loading = useAccountsStore((state) => state.loading);
+  const summaryLoading = useAccountsStore((state) => state.summaryLoading);
+  const fetchAll = useAccountsStore((state) => state.fetchAll);
+  const createAccount = useAccountsStore((state) => state.createAccount);
+  const editAccount = useAccountsStore((state) => state.editAccount);
+  const deactivateAccount = useAccountsStore((state) => state.deactivateAccount);
+  const reactivateAccount = useAccountsStore((state) => state.reactivateAccount);
 
   // Modal state
   const [formOpen, setFormOpen] = useState(false);
@@ -130,16 +76,12 @@ export default function AccountsPage() {
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
 
   // Loading state
-  const [loading, setLoading] = useState(true);
-  const [summaryLoading, setSummaryLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Filter state
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [reviewFrom, setReviewFrom] = useState("");
-  const [reviewTo, setReviewTo] = useState("");
 
   // --------------------------------------------------------------------------
   // COMPUTED VALUES
@@ -193,8 +135,6 @@ export default function AccountsPage() {
     search,
     typeFilter,
     statusFilter,
-    reviewFrom,
-    reviewTo,
   ]);
 
   // --------------------------------------------------------------------------
@@ -335,103 +275,21 @@ export default function AccountsPage() {
 
 
   // --------------------------------------------------------------------------
-  // API FUNCTIONS
-  // --------------------------------------------------------------------------
-
-  const refreshAccounts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/accounts", { cache: "no-store" });
-      const payload = (await response.json()) as AccountsListResponse;
-      if (payload.success && payload.data) {
-        setAccounts(payload.data.accounts.map(mapApiAccount));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const refreshSummary = useCallback(async () => {
-    setSummaryLoading(true);
-    try {
-      const response = await fetch("/api/accounts/summary?active=true", {
-        cache: "no-store",
-      });
-      const payload = (await response.json()) as SummaryResponse;
-      if (payload.success && payload.data) {
-        setSummary({
-          totalBalance: Number(payload.data.totalBalance ?? 0),
-          currency: payload.data.currency ?? "KES",
-        });
-      }
-    } finally {
-      setSummaryLoading(false);
-    }
-  }, []);
-
-  const refreshAll = useCallback(async () => {
-    await Promise.all([refreshAccounts(), refreshSummary()]);
-  }, [refreshAccounts, refreshSummary]);
-
-  // --------------------------------------------------------------------------
   // EVENT HANDLERS
   // --------------------------------------------------------------------------
 
-  const handleCreateAccount = useCallback(
-    async (values: AccountFormValues) => {
-      await fetch("/api/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          institution: values.institution,
-          type: toApiAccountType(values.type),
-          currency: "KES",
-          openingBalance: String(values.openingBalance ?? 0),
-          isActive: values.isActive,
-        }),
-      });
-      await refreshAll();
-    },
-    [refreshAll]
-  );
-
-  const handleEditAccount = useCallback(
-    async (values: AccountFormValues) => {
-      if (!editingAccountId) return;
-      await fetch(`/api/accounts/${editingAccountId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          institution: values.institution,
-          type: toApiAccountType(values.type),
-          openingBalance: String(values.openingBalance ?? 0),
-        }),
-      });
-      await refreshAll();
-    },
-    [editingAccountId, refreshAll]
-  );
-
   const handleDeactivate = useCallback(
     async (accountId: string) => {
-      await fetch(`/api/accounts/${accountId}`, { method: "DELETE" });
-      await refreshAll();
+      await deactivateAccount(accountId);
     },
-    [refreshAll]
+    [deactivateAccount]
   );
 
   const handleReactivate = useCallback(
     async (accountId: string) => {
-      await fetch(`/api/accounts/${accountId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: true }),
-      });
-      await refreshAll();
+      await reactivateAccount(accountId);
     },
-    [refreshAll]
+    [reactivateAccount]
   );
 
   const openCreate = useCallback(() => {
@@ -488,23 +346,22 @@ export default function AccountsPage() {
       setSaving(true);
       try {
         if (formMode === "create") {
-          await handleCreateAccount(values);
+          await createAccount(values);
         } else {
-          await handleEditAccount(values);
+          if (!editingAccountId) return;
+          await editAccount(editingAccountId, values);
         }
       } finally {
         setSaving(false);
       }
     },
-    [formMode, handleCreateAccount, handleEditAccount]
+    [createAccount, editAccount, editingAccountId, formMode]
   );
 
   const handleClearFilters = useCallback(() => {
     setSearch("");
     setTypeFilter("all");
     setStatusFilter("all");
-    setReviewFrom("");
-    setReviewTo("");
   }, []);
 
   // --------------------------------------------------------------------------
@@ -512,8 +369,8 @@ export default function AccountsPage() {
   // --------------------------------------------------------------------------
 
   useEffect(() => {
-    void refreshAll();
-  }, [refreshAll]);
+    void fetchAll();
+  }, [fetchAll]);
 
   // --------------------------------------------------------------------------
   // RENDER

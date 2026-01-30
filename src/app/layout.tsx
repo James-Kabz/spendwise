@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@jameskabz/nextcraft-ui/styles.css";
+import { CraftToaster } from "@jameskabz/nextcraft-ui";
 import Providers from "./providers";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <CraftToaster />
       </body>
     </html>
   );

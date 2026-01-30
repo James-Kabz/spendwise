@@ -29,3 +29,11 @@ export type Account = {
   isActive: boolean;
   lastUpdated: string;
 };
+
+export type AccountFormValues = {
+  name: string;
+  institution: string;
+  type: AccountType;
+  openingBalance: number;
+  isActive: boolean;
+};
