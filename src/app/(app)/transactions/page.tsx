@@ -108,8 +108,8 @@ export default function TransactionsPage() {
     setFormOpen(true);
   }, []);
 
-  const handleSubmit = useCallback(
-    async (values: TransactionFormValues) => {
+  const buildPayload = useCallback(
+    (values: TransactionFormValues) => {
       const resolvedCategoryId = values.categoryId || selectedCategoryId;
       const resolvedTransferId =
         values.transferToAccountId || selectedTransferAccountId;
@@ -117,45 +117,67 @@ export default function TransactionsPage() {
       if (values.direction === "transfer") {
         if (!resolvedTransferId) {
           toast.error("Transfer account is required");
-          return;
+          return null;
         }
-        const payload = {
+        return {
           ...values,
           transferToAccountId: resolvedTransferId,
           categoryId: undefined,
         };
-        if (formMode === "create") {
-          await createTransaction(payload);
-        } else if (editingId) {
-          await updateTransaction(editingId, payload);
-        }
-        return;
       }
 
       if (!resolvedCategoryId) {
         toast.error("Category is required");
-        return;
+        return null;
       }
 
-      const payload = {
+      return {
         ...values,
         categoryId: resolvedCategoryId,
         transferToAccountId: undefined,
       };
+    },
+    [selectedCategoryId, selectedTransferAccountId]
+  );
+
+  const handleModalSubmit = useCallback(
+    async (values: TransactionFormValues) => {
+      const payload = buildPayload(values);
+      if (!payload) return;
       if (formMode === "create") {
         await createTransaction(payload);
       } else if (editingId) {
         await updateTransaction(editingId, payload);
       }
     },
-    [
-      createTransaction,
-      editingId,
-      formMode,
-      selectedCategoryId,
-      selectedTransferAccountId,
-      updateTransaction,
-    ]
+    [buildPayload, createTransaction, editingId, formMode, updateTransaction]
+  );
+
+  const handleQuickAddSubmit = useCallback(
+    async (values: TransactionFormValues) => {
+      if (values.direction === "transfer") {
+        if (!values.transferToAccountId) {
+          toast.error("Transfer account is required");
+          return;
+        }
+        await createTransaction({
+          ...values,
+          categoryId: undefined,
+        });
+        return;
+      }
+
+      if (!values.categoryId) {
+        toast.error("Category is required");
+        return;
+      }
+
+      await createTransaction({
+        ...values,
+        transferToAccountId: undefined,
+      });
+    },
+    [createTransaction]
   );
 
   const handleConfirmDelete = useCallback(async () => {
@@ -238,14 +260,11 @@ export default function TransactionsPage() {
           value: account.id,
         })),
       },
-    ];
-
-    if (formDirection === "transfer") {
-      fields.push({
+      {
         name: "transferToAccountId",
         label: "Transfer to",
         type: "select",
-        required: true,
+        required: false,
         placeholder: "Select account",
         options: accounts.map((account) => ({
           label: account.name,
@@ -255,13 +274,12 @@ export default function TransactionsPage() {
           onChange: (event: ChangeEvent<HTMLSelectElement>) =>
             setSelectedTransferAccountId(event.target.value),
         },
-      });
-    } else {
-      fields.push({
+      },
+      {
         name: "categoryId",
         label: "Category",
         type: "select",
-        required: true,
+        required: false,
         placeholder: "Select category",
         options: categories.map((category) => ({
           label: category.name,
@@ -271,8 +289,8 @@ export default function TransactionsPage() {
           onChange: (event: ChangeEvent<HTMLSelectElement>) =>
             setSelectedCategoryId(event.target.value),
         },
-      });
-    }
+      },
+    ];
 
     fields.push({
       name: "note",
@@ -283,7 +301,7 @@ export default function TransactionsPage() {
     });
 
     return fields;
-  }, [accounts, categories, formDirection]);
+  }, [accounts, categories]);
 
   const columns = useMemo<Array<CraftDataTableColumn<Transaction>>>(
     () => [
@@ -427,7 +445,7 @@ export default function TransactionsPage() {
               name: account.name,
             }))}
             categories={categories}
-            onSubmit={handleSubmit}
+            onSubmit={handleQuickAddSubmit}
           />
         </div>
 
@@ -436,6 +454,7 @@ export default function TransactionsPage() {
           columns={columns}
           actions={tableActions}
           showActionsColumn
+          rowKey="id"
           loading={loading}
           emptyState="No transactions found"
         />
@@ -447,11 +466,34 @@ export default function TransactionsPage() {
         fields={formFields}
         initialData={formInitialData}
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(next) => {
+          setFormOpen(next);
+          if (next) {
+            const nextDirection =
+              formInitialData?.direction ?? ("expense" as TransactionDirection);
+            setFormDirection(nextDirection);
+            setSelectedCategoryId(formInitialData?.categoryId ?? "");
+            setSelectedTransferAccountId(formInitialData?.transferToAccountId ?? "");
+            return;
+          }
+          setEditingId(null);
+          setFormMode("create");
+          setFormDirection("expense");
+          setSelectedCategoryId("");
+          setSelectedTransferAccountId("");
+        }}
         submitLabel={formMode === "create" ? "Create transaction" : "Save changes"}
         closeOnSubmit
         showReset={false}
-        onSubmit={handleSubmit}
+        customValidation={(values) => {
+          if (values.direction === "transfer") {
+            return values.transferToAccountId
+              ? {}
+              : { transferToAccountId: "Transfer account is required" };
+          }
+          return values.categoryId ? {} : { categoryId: "Category is required" };
+        }}
+        onSubmit={handleModalSubmit}
       />
 
       <CraftConfirmDialog
