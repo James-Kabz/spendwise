@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   CraftButton,
   CraftCreateEditDrawer,
@@ -46,7 +46,10 @@ export default function QuickAddTransactionDrawer({
     },
   });
 
-  const direction = form.watch("direction") as TransactionDirection;
+  const direction = useWatch({
+    control: form.control,
+    name: "direction",
+  }) as TransactionDirection;
 
   const fetchDefaults = React.useCallback(async () => {
     const payload = await fetchWrapper.get<LastUsedResponse>(

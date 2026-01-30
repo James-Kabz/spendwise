@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CraftBadge,
-  CraftButton,
   CraftConfirmDialog,
   CraftDataTable,
   CraftDataTableFilters,

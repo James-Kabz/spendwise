@@ -4,6 +4,14 @@ import path from "path";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      }
+    ],
+  },
   turbopack: {
     resolveAlias: {
       "@": path.resolve(__dirname, "src"),

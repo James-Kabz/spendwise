@@ -2,8 +2,12 @@
 
 import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  CraftDataTableAction,
+  CraftDataTableColumn,
+  CraftFormModalField,
+} from "@jameskabz/nextcraft-ui";
 import {
-  CraftButton,
   CraftConfirmDialog,
   CraftDataTable,
   CraftDataTableFilters,
@@ -43,6 +47,8 @@ export default function TransactionsPage() {
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formDirection, setFormDirection] = useState<TransactionDirection>("expense");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedTransferAccountId, setSelectedTransferAccountId] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTransaction, setConfirmTransaction] = useState<Transaction | null>(null);
 
@@ -88,6 +94,8 @@ export default function TransactionsPage() {
     setFormMode("create");
     setEditingId(null);
     setFormDirection("expense");
+    setSelectedCategoryId("");
+    setSelectedTransferAccountId("");
     setFormOpen(true);
   }, []);
 
@@ -95,18 +103,25 @@ export default function TransactionsPage() {
     setFormMode("edit");
     setEditingId(tx.id);
     setFormDirection(tx.direction);
+    setSelectedCategoryId(tx.category?.id ?? "");
+    setSelectedTransferAccountId(tx.transferToAccount?.id ?? "");
     setFormOpen(true);
   }, []);
 
   const handleSubmit = useCallback(
     async (values: TransactionFormValues) => {
+      const resolvedCategoryId = values.categoryId || selectedCategoryId;
+      const resolvedTransferId =
+        values.transferToAccountId || selectedTransferAccountId;
+
       if (values.direction === "transfer") {
-        if (!values.transferToAccountId) {
+        if (!resolvedTransferId) {
           toast.error("Transfer account is required");
           return;
         }
         const payload = {
           ...values,
+          transferToAccountId: resolvedTransferId,
           categoryId: undefined,
         };
         if (formMode === "create") {
@@ -117,13 +132,14 @@ export default function TransactionsPage() {
         return;
       }
 
-      if (!values.categoryId) {
+      if (!resolvedCategoryId) {
         toast.error("Category is required");
         return;
       }
 
       const payload = {
         ...values,
+        categoryId: resolvedCategoryId,
         transferToAccountId: undefined,
       };
       if (formMode === "create") {
@@ -132,7 +148,14 @@ export default function TransactionsPage() {
         await updateTransaction(editingId, payload);
       }
     },
-    [createTransaction, editingId, formMode, updateTransaction]
+    [
+      createTransaction,
+      editingId,
+      formMode,
+      selectedCategoryId,
+      selectedTransferAccountId,
+      updateTransaction,
+    ]
   );
 
   const handleConfirmDelete = useCallback(async () => {
@@ -142,7 +165,7 @@ export default function TransactionsPage() {
     setConfirmTransaction(null);
   }, [confirmTransaction, deleteTransaction]);
 
-  const formInitialData = useMemo(() => {
+  const formInitialData = useMemo<Partial<TransactionFormValues> | null>(() => {
     if (formMode === "edit" && editingId) {
       const tx = transactions.find((item) => item.id === editingId);
       if (!tx) return null;
@@ -158,7 +181,7 @@ export default function TransactionsPage() {
       };
     }
       return {
-        direction: "expense",
+        direction: "expense" as TransactionDirection,
         amount: 0,
         currency: "KES",
         occurredAt: new Date().toISOString().slice(0, 16),
@@ -169,8 +192,9 @@ export default function TransactionsPage() {
       };
   }, [editingId, formMode, transactions]);
 
+
   const formFields = useMemo(() => {
-    const fields = [
+    const fields: Array<CraftFormModalField<TransactionFormValues>> = [
       {
         name: "direction",
         label: "Direction",
@@ -227,6 +251,10 @@ export default function TransactionsPage() {
           label: account.name,
           value: account.id,
         })),
+        rules: {
+          onChange: (event: ChangeEvent<HTMLSelectElement>) =>
+            setSelectedTransferAccountId(event.target.value),
+        },
       });
     } else {
       fields.push({
@@ -239,6 +267,10 @@ export default function TransactionsPage() {
           label: category.name,
           value: category.id,
         })),
+        rules: {
+          onChange: (event: ChangeEvent<HTMLSelectElement>) =>
+            setSelectedCategoryId(event.target.value),
+        },
       });
     }
 
@@ -246,25 +278,27 @@ export default function TransactionsPage() {
       name: "note",
       label: "Note",
       type: "text",
+      required: false,
+      placeholder: "Enter note",
     });
 
     return fields;
   }, [accounts, categories, formDirection]);
 
-  const columns = useMemo(
+  const columns = useMemo<Array<CraftDataTableColumn<Transaction>>>(
     () => [
       {
         id: "occurredAt",
         header: "When",
         accessor: "occurredAt",
-        formatter: (value: string) => formatDateTime(value),
+        formatter: (value) => formatDateTime(String(value)),
       },
       {
         id: "direction",
         header: "Type",
         accessor: "direction",
-        formatter: (value: TransactionDirection) => (
-          <TransactionTypeBadge direction={value} />
+        formatter: (value) => (
+          <TransactionTypeBadge direction={value as TransactionDirection} />
         ),
       },
       {
@@ -285,19 +319,18 @@ export default function TransactionsPage() {
         header: "Amount",
         align: "right" as const,
         accessor: (row: Transaction) => row.amount,
-        formatter: (_value: number, row: Transaction) =>
-          formatCurrency(row.amount, row.currency),
+        formatter: (_value, row) => formatCurrency(row.amount, row.currency),
       },
       {
         id: "note",
         header: "Note",
-        accessor: (row: Transaction) => row.note ?? "—",
+        accessor: "note",
       },
     ],
     []
   );
 
-  const tableActions = useMemo(
+  const tableActions = useMemo<Array<CraftDataTableAction<Transaction>>>(
     () => [
       {
         key: "edit",

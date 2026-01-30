@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  CraftDataTableAction,
+  CraftDataTableColumn,
+  CraftFormModalField,
+} from "@jameskabz/nextcraft-ui";
 import {
   CraftBadge,
-  CraftButton,
   CraftConfirmDialog,
   CraftDataTable,
   CraftDataTableFilters,
@@ -30,7 +34,6 @@ export default function CategoriesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [formKind, setFormKind] = useState<CategoryKind>("expense");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmCategory, setConfirmCategory] = useState<Category | null>(null);
 
@@ -45,14 +48,12 @@ export default function CategoriesPage() {
   const openCreate = useCallback(() => {
     setFormMode("create");
     setEditingCategoryId(null);
-    setFormKind(kindFilter);
     setFormOpen(true);
-  }, [kindFilter]);
+  }, []);
 
   const openEdit = useCallback((category: Category) => {
     setFormMode("edit");
     setEditingCategoryId(category.id);
-    setFormKind(category.kind);
     setFormOpen(true);
   }, []);
 
@@ -93,7 +94,7 @@ export default function CategoriesPage() {
     };
   }, [categories, editingCategoryId, formMode, kindFilter]);
 
-  const formFields = useMemo(() => {
+  const formFields = useMemo<Array<CraftFormModalField<CategoryFormValues>>>(() => {
     return [
       {
         name: "name",
@@ -111,10 +112,6 @@ export default function CategoriesPage() {
             kind === "expense" ? "Expense" : kind === "income" ? "Income" : "Savings",
           value: kind,
         })),
-        fieldProps: {
-          onChange: (event: React.ChangeEvent<HTMLSelectElement>) =>
-            setFormKind(event.target.value as CategoryKind),
-        },
       },
       {
         name: "color",
@@ -130,15 +127,15 @@ export default function CategoriesPage() {
     ];
   }, []);
 
-  const columns = useMemo(
+  const columns = useMemo<Array<CraftDataTableColumn<Category>>>(
     () => [
       {
         id: "name",
         header: "Category",
         accessor: (row: Category) => row.name,
-        formatter: (value: string) => (
+        formatter: (value) => (
           <span className="text-base font-semibold text-[rgb(var(--nc-fg))]">
-            {value}
+            {String(value)}
           </span>
         ),
       },
@@ -146,10 +143,16 @@ export default function CategoriesPage() {
         id: "kind",
         header: "Kind",
         accessor: (row: Category) => row.kind,
-        formatter: (value: CategoryKind) => (
+        formatter: (value) => (
           <CraftBadge
             variant="soft"
-            tone={value === "expense" ? "midnight" : value === "income" ? "ocean" : "aurora"}
+            tone={
+              value === "expense"
+                ? "midnight"
+                : value === "income"
+                  ? "ocean"
+                  : "aurora"
+            }
           >
             {value === "expense" ? "Expense" : value === "income" ? "Income" : "Savings"}
           </CraftBadge>
@@ -159,11 +162,11 @@ export default function CategoriesPage() {
         id: "color",
         header: "Color",
         accessor: (row: Category) => row.color ?? "",
-        formatter: (value: string) =>
+        formatter: (value) =>
           value ? (
             <span
               className="inline-block h-5 w-5 rounded-full border border-[rgb(var(--nc-border)/0.4)]"
-              style={{ backgroundColor: value }}
+              style={{ backgroundColor: String(value) }}
             />
           ) : (
             "—"
@@ -178,7 +181,7 @@ export default function CategoriesPage() {
     []
   );
 
-  const tableActions = useMemo(
+  const tableActions = useMemo<Array<CraftDataTableAction<Category>>>(
     () => [
       {
         key: "edit",
