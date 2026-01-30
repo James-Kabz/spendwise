@@ -9,6 +9,7 @@ import {
   CraftDataTableFilters,
   CraftFormModal,
 } from "@jameskabz/nextcraft-ui";
+import { toast } from "@jameskabz/nextcraft-ui";
 
 import { formatCurrency } from "@/components/spendwise/accounts/utils";
 import QuickAddTransactionDrawer from "@/components/spendwise/transactions/QuickAddTransactionDrawer";
@@ -54,7 +55,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     void fetchAccounts();
-    void fetchCategories();
+    void fetchCategories({ active: "true" });
     void fetchTransactions({
       page: "1",
       pageSize: "25",
@@ -99,10 +100,36 @@ export default function TransactionsPage() {
 
   const handleSubmit = useCallback(
     async (values: TransactionFormValues) => {
+      if (values.direction === "transfer") {
+        if (!values.transferToAccountId) {
+          toast.error("Transfer account is required");
+          return;
+        }
+        const payload = {
+          ...values,
+          categoryId: undefined,
+        };
+        if (formMode === "create") {
+          await createTransaction(payload);
+        } else if (editingId) {
+          await updateTransaction(editingId, payload);
+        }
+        return;
+      }
+
+      if (!values.categoryId) {
+        toast.error("Category is required");
+        return;
+      }
+
+      const payload = {
+        ...values,
+        transferToAccountId: undefined,
+      };
       if (formMode === "create") {
-        await createTransaction(values);
+        await createTransaction(payload);
       } else if (editingId) {
-        await updateTransaction(editingId, values);
+        await updateTransaction(editingId, payload);
       }
     },
     [createTransaction, editingId, formMode, updateTransaction]
@@ -123,7 +150,7 @@ export default function TransactionsPage() {
         direction: tx.direction,
         amount: tx.amount,
         currency: tx.currency,
-        occurredAt: tx.occurredAt,
+        occurredAt: tx.occurredAt.slice(0, 16),
         accountId: tx.account?.id ?? "",
         categoryId: tx.category?.id ?? "",
         transferToAccountId: tx.transferToAccount?.id ?? "",
@@ -149,11 +176,17 @@ export default function TransactionsPage() {
         label: "Direction",
         type: "select",
         required: true,
+        placeholder: "Select direction",
         options: TRANSACTION_DIRECTIONS.map((value) => ({
-          label: value,
+          label:
+            value === "expense"
+              ? "Expense"
+              : value === "income"
+                ? "Income"
+                : "Transfer",
           value,
         })),
-        fieldProps: {
+        rules: {
           onChange: (event: ChangeEvent<HTMLSelectElement>) =>
             setFormDirection(event.target.value as TransactionDirection),
         },
@@ -175,6 +208,7 @@ export default function TransactionsPage() {
         label: "Account",
         type: "select",
         required: true,
+        placeholder: "Select account",
         options: accounts.map((account) => ({
           label: account.name,
           value: account.id,
@@ -188,6 +222,7 @@ export default function TransactionsPage() {
         label: "Transfer to",
         type: "select",
         required: true,
+        placeholder: "Select account",
         options: accounts.map((account) => ({
           label: account.name,
           value: account.id,
@@ -199,6 +234,7 @@ export default function TransactionsPage() {
         label: "Category",
         type: "select",
         required: true,
+        placeholder: "Select category",
         options: categories.map((category) => ({
           label: category.name,
           value: category.id,
@@ -325,7 +361,12 @@ export default function TransactionsPage() {
               value: directionFilter,
               placeholder: "All directions",
               options: TRANSACTION_DIRECTIONS.map((direction) => ({
-                label: direction,
+                label:
+                  direction === "expense"
+                    ? "Expense"
+                    : direction === "income"
+                      ? "Income"
+                      : "Transfer",
                 value: direction,
               })),
             },
@@ -353,7 +394,7 @@ export default function TransactionsPage() {
               name: account.name,
             }))}
             categories={categories}
-            onSubmit={createTransaction}
+            onSubmit={handleSubmit}
           />
         </div>
 

@@ -88,7 +88,12 @@ export default function QuickAddTransactionDrawer({
           type="select"
           required
           options={TRANSACTION_DIRECTIONS.map((value) => ({
-            label: value,
+            label:
+              value === "expense"
+                ? "Expense"
+                : value === "income"
+                  ? "Income"
+                  : "Transfer",
             value,
           }))}
         />
