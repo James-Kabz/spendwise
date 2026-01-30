@@ -73,6 +73,7 @@ export default function AccountsPage() {
 
   // Modal state
   const [formOpen, setFormOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
 
@@ -311,12 +312,14 @@ export default function AccountsPage() {
   const openCreate = useCallback(() => {
     setFormMode("create");
     setEditingAccountId(null);
+    setFormKey((prev) => prev + 1);
     setFormOpen(true);
   }, []);
 
   const openEdit = useCallback((account: Account) => {
     setFormMode("edit");
     setEditingAccountId(account.id);
+    setFormKey((prev) => prev + 1);
     setFormOpen(true);
   }, []);
 
@@ -372,6 +375,9 @@ export default function AccountsPage() {
 
   const handleFormOpenChange = useCallback((open: boolean) => {
     setFormOpen(open);
+    if (open) {
+      setFormKey((prev) => prev + 1);
+    }
     if (!open) {
       setEditingAccountId(null);
       setFormMode("create");
@@ -472,6 +478,7 @@ export default function AccountsPage() {
 
       {/* Form Modal */}
       <CraftFormModal
+        key={formKey}
         title={formMode === "create" ? "Create account" : "Edit account"}
         description={
           formMode === "create"
